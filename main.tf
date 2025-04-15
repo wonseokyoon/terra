@@ -65,3 +65,48 @@ resource "aws_subnet" "subnet_2" {
     Name = "${var.prefix}-subnet-2"
   }
 }
+
+// AWS 인터넷 게이트웨이 리소스를 생성하고 이름을 'igw_1'로 설정
+resource "aws_internet_gateway" "igw_1" {
+  // 이 인터넷 게이트웨이가 연결될 VPC를 지정. 여기서는 'vpc_1'를 선택
+  vpc_id = aws_vpc.vpc_1.id
+
+  // 리소스에 대한 태그를 설정
+  tags = {
+    Name = "${var.prefix}-igw-1"
+  }
+}
+
+
+// AWS 라우트 테이블 리소스를 생성하고 이름을 'rt_1'로 설정
+resource "aws_route_table" "rt_1" {
+  // 이 라우트 테이블이 속할 VPC를 지정. 여기서는 'vpc_1'를 선택
+  vpc_id = aws_vpc.vpc_1.id
+
+  // 라우트 규칙을 설정. 여기서는 모든 트래픽(0.0.0.0/0)을 'igw_1' 인터넷 게이트웨이로 보냄
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw_1.id
+  }
+
+  // 리소스에 대한 태그를 설정
+  tags = {
+    Name = "${var.prefix}-rt-1"
+  }
+}
+
+// 라우트 테이블 'rt_1'과 서브넷 'subnet_1'을 연결
+resource "aws_route_table_association" "association_1" {
+  // 연결할 서브넷을 지정
+  subnet_id = aws_subnet.subnet_1.id
+  // 연결할 라우트 테이블을 지정
+  route_table_id = aws_route_table.rt_1.id
+}
+
+// 라우트 테이블 'rt_1'과 서브넷 'subnet_2'을 연결
+resource "aws_route_table_association" "association_2" {
+  // 연결할 서브넷을 지정
+  subnet_id = aws_subnet.subnet_2.id
+  // 연결할 라우트 테이블을 지정
+  route_table_id = aws_route_table.rt_1.id
+}
